@@ -4,6 +4,10 @@ This is a project based on llm and HTTPS proxy.
 
 I will add more details later.
 
+## Introduction
+
+![Project Descriptions](docs/server_description.png)
+
 ## Quick Start
 
 Make sure you have already set up the LLM API keys and make c file.
