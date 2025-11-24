@@ -1,5 +1,4 @@
-# CS112 Final Project Part1 - HTTPS Proxy Makefile
-# Based on a2 Makefile with modifications for proxy
+# HTTPS Proxy Makefile
 
 src = $(wildcard *.c)
 obj = $(src:.c=.o)
@@ -15,7 +14,7 @@ CFLAGS = -Dfscanf=BANNED_fscanf \
          -Dfputc=BANNED_fputc \
          -Dfputs=BANNED_fputs
 
-# OpenSSL related and pthread for multi-threading, zlib for gzip decompression
+# OpenSSL related and pthread for multi-threading, zlib for gzip decompression (This is no longer used in most recent versions)
 LDFLAGS = -lssl -lcrypto -lpthread -lnsl -lz
 
 proxy: $(obj)

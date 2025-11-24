@@ -1,4 +1,4 @@
-// CS112 Final Project Part 1 - HTTPS MITM Proxy with LLM Enhancement
+// HTTPS MITM Proxy with LLM Enhancement Settings
 
 #define _GNU_SOURCE
 #include <stdio.h>

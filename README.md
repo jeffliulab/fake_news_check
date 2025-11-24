@@ -8,6 +8,12 @@ I will add more details later.
 
 ![Project Descriptions](docs/server_description.png)
 
+The user interaction module is now in discussion and design stage. 
+
+The plan is to allow users to click "Fake" or "Real", and maintain a simple community of fact checks.
+
+But the fact check should based on the content or the website? This is still in discussion and will update in later versions.
+
 ## Quick Start
 
 Make sure you have already set up the LLM API keys and make c file.

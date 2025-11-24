@@ -272,7 +272,7 @@ def inject_async_summary_script(html_content, page_url):
                         <div style="flex: 1; min-width: 300px; margin-right: 20px;">
                             <h2 style="margin: 0 0 15px 0; padding: 0; font-size: 24px; font-weight: 700; color: ${{bgColor}}; display: flex; align-items: center;">
                                 <span style="margin-right: 10px; font-size: 28px;">[AI]</span>
-                                <span>Content Analysis</span>
+                                <span>Summary and Fake News Check</span>
                             </h2>
                             <div id="cs112-summary-content" style="background: #f8f9fa; border-left: 4px solid ${{bgColor}}; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
                                 <p style="margin: 0; padding: 0; font-size: 16px; line-height: 1.8; color: #333;">
@@ -281,7 +281,7 @@ def inject_async_summary_script(html_content, page_url):
                             </div>
                             ${{fakeNewsHtml}}
                             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: 13px; color: #666; margin-top: 15px;">
-                                <span><strong>Powered by LLM Proxy</strong> | CS112 SafeGate</span>
+                                <span><strong>Powered by Tufts CS112 Team LLM Proxy</strong> | Fake News Check is a free and open-source service! We are not responsible for any mistakes or misinformation!</span>
                                 <button onclick="document.getElementById('cs112-ai-summary-banner').remove()" style="background: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600;">Close</button>
                             </div>
                         </div>
