@@ -1,0 +1,29 @@
+# key files
+*.key
+*.pem
+*.crt
+
+
+# Output directory for saved HTML files
+output/
+
+# Compiled proxy binary
+proxy
+*.o
+
+# Temporary files
+/tmp/proxy_in.html
+/tmp/proxy_out.html
+
+# Environment file
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+py/__pycache__/
+
+# Certificate files (if generated locally)
+*.pem
+*.key
+*.crt
