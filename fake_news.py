@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
 CS112 Final Project - Fake News
-Flask server that provides AI summary and fake news detection
-Main scripts are created by Pang Liu,
-Debug and print information are created with the help of Gemini (AI Tools).
+Flask server that provides AI summary and fake news detection.
+The user interaction module is now in discussion and design stage, and will release in later versions.
 """
 
 import sys
