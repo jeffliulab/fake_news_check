@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CS112 Final Project - Fake News Detection Service
+CS112 Final Project - Fake News
 Flask server that provides AI summary and fake news detection
 Main scripts are created by Pang Liu,
 Debug and print information are created with the help of Gemini (AI Tools).
@@ -10,6 +10,7 @@ import sys
 import os
 import base64
 import json
+import time
 from datetime import datetime
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
@@ -25,8 +26,6 @@ load_dotenv()
 
 # 创建 LLMProxy 客户端实例
 client = LLMProxy()
-
-# Flask app
 app = Flask(__name__)
 CORS(app)
 
@@ -58,17 +57,11 @@ def get_summary():
             page_url = request.args.get('url', '')
             page_content = request.args.get('content', '')
         
-        print("")
-        print("🤖" + "=" * 58 + "🤖")
-        print("📋 JavaScript Async Request: Summary + Fake News Detection")
-        print("=" * 60)
-        print(f"   URL: {page_url[:70] if page_url else '(none)'}")
-        print(f"   Content length: {len(page_content)} chars")
-        print("   Preparing to call LLM Proxy...")
-        print("=" * 60)
+        print(f"[SUMMARY] Request from {page_url[:70] if page_url else 'unknown'}")
+        print(f"[SUMMARY] Content length: {len(page_content)} chars")
         
         if not page_content or len(page_content) < 50:
-            print("⚠️  Content too short, returning default message")
+            print("[SUMMARY] Content too short")
             return jsonify({
                 'summary': 'Page content insufficient to generate summary.',
                 'is_fake_news': False,
@@ -78,13 +71,7 @@ def get_summary():
         # 调用 LLM 进行总结 + Fake News 检测
         summary, is_fake, confidence = analyze_content(page_content)
         
-        print("")
-        print("📋 LLM Analysis Complete")
-        print("=" * 60)
-        print(f"✅ Summary: {summary[:100]}...")
-        print(f"🔍 Fake News: {'Yes' if is_fake else 'No'} (Confidence: {confidence})")
-        print("🤖" + "=" * 58 + "🤖")
-        print("")
+        print(f"[SUMMARY] Analysis complete: fake={is_fake}, confidence={confidence}")
         
         return jsonify({
             'summary': summary,
@@ -94,7 +81,7 @@ def get_summary():
         })
     
     except Exception as e:
-        print(f"❌ Analysis failed: {e}")
+        print(f"[ERROR] Analysis failed: {e}")
         return jsonify({
             'error': str(e),
             'summary': 'Analysis failed',
@@ -114,11 +101,10 @@ def enhance_html():
         if not data:
             return jsonify({'error': 'Invalid JSON'}), 400
         
-        # Check if HTML is base64 encoded
         if 'html_base64' in data:
             html_content = base64.b64decode(data['html_base64']).decode('utf-8', errors='replace')
             original_url = data.get('url', '')
-            print(f"[ENHANCE] Received HTML: {len(html_content)} bytes, URL: {original_url}")
+            print(f"[ENHANCE] Received {len(html_content)} bytes from {original_url}")
         elif 'html' in data:
             html_content = data['html']
             original_url = data.get('url', '')
@@ -128,17 +114,15 @@ def enhance_html():
         # Inject JavaScript
         modified_html = inject_async_summary_script(html_content, original_url)
         
-        print(f"[ENHANCE] ✅ Quick return HTML ({len(modified_html)} bytes), JS will load summary asynchronously")
+        print(f"[ENHANCE] Injected script, returning {len(modified_html)} bytes")
         
-        # 使用 base64 编码传输
         html_base64 = base64.b64encode(modified_html.encode('utf-8')).decode('ascii')
-        
         response_json = json.dumps({'html_base64': html_base64}, ensure_ascii=True)
         
         return Response(response_json, mimetype='application/json')
     
     except Exception as e:
-        print(f"[ERROR] Page processing failed: {e}")
+        print(f"[ERROR] Enhancement failed: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -150,18 +134,14 @@ def analyze_content(text):
         (summary, is_fake_news, confidence)
     """
     if not client:
-        return "⚠️ LLM not configured.", False, "N/A"
+        return "LLM not configured.", False, "N/A"
     
     try:
-        # Limit input length
         text = text[:3000]
         
-        print(f"[LLM] Analyzing... (input: {len(text)} chars)")
-        
-        import time
+        print(f"[LLM] Starting analysis ({len(text)} chars)")
         start_time = time.time()
         
-        # Construct Prompt: complete summary + Fake News detection
         system_prompt = """You are a web content analysis assistant.
 Your tasks are:
 1. Summarize the main content of the webpage in English (no more than 100 words)
@@ -194,9 +174,8 @@ Only return JSON, no other content."""
         elapsed = time.time() - start_time
         result_text = response['result'].strip()
         
-        print(f"[LLM] ✅ Analysis complete (time: {elapsed:.2f}s)")
+        print(f"[LLM] Completed in {elapsed:.2f}s")
         
-        # Parse JSON response
         try:
             result_json = json.loads(result_text)
             summary = result_json.get('summary', result_text[:100])
@@ -211,8 +190,8 @@ Only return JSON, no other content."""
         return summary, is_fake, confidence
         
     except Exception as e:
-        print(f"[LLM] ❌ Analysis failed: {e}")
-        return "❌ Analysis failed, please try again later.", False, "N/A"
+        print(f"[ERROR] LLM analysis failed: {e}")
+        return "Analysis failed, please try again later.", False, "N/A"
 
 
 def inject_async_summary_script(html_content, page_url):
@@ -229,7 +208,6 @@ def inject_async_summary_script(html_content, page_url):
     # 创建异步加载脚本
     async_script = f'''
 <script>
-// CS112 AI Summary + Fake News Detection - Async Loader
 (function() {{
     if (document.readyState === 'loading') {{
         document.addEventListener('DOMContentLoaded', initAISummary);
@@ -239,13 +217,8 @@ def inject_async_summary_script(html_content, page_url):
     
     function initAISummary() {{
         try {{
-            // Create top banner (loading state)
-            createBanner('⏳ Generating AI analysis...', null, null);
-            
-            // Extract page text content
+            createBanner('Generating AI analysis...', null, null);
             var pageText = extractPageText();
-            
-            // Async request to Flask for summary
             requestSummary(pageText);
         }} catch(e) {{
             console.error('[AI Summary] Error:', e);
@@ -256,8 +229,7 @@ def inject_async_summary_script(html_content, page_url):
         var banner = document.createElement('div');
         banner.id = 'cs112-ai-summary-banner';
         
-        // Select color based on Fake News detection result
-        var bgColor = '#667eea';  // Default blue-purple
+        var bgColor = '#667eea';
         var fakeNewsHtml = '';
         
         if (isFakeNews !== null) {{
@@ -266,7 +238,7 @@ def inject_async_summary_script(html_content, page_url):
                 fakeNewsHtml = `
                     <div style="background: #ffe6e6; border: 2px solid #e74c3c; border-radius: 8px; padding: 15px; margin-top: 15px;">
                         <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                            <span style="font-size: 32px; margin-right: 10px;">⚠️</span>
+                            <span style="font-size: 32px; margin-right: 10px;">!</span>
                             <div>
                                 <h3 style="margin: 0; color: #e74c3c; font-size: 18px; font-weight: bold;">Fake News Warning</h3>
                                 <p style="margin: 5px 0 0 0; color: #c0392b; font-size: 14px;">This content may contain false or misleading information</p>
@@ -282,7 +254,7 @@ def inject_async_summary_script(html_content, page_url):
                 fakeNewsHtml = `
                     <div style="background: #e8f8f5; border: 2px solid #27ae60; border-radius: 8px; padding: 12px; margin-top: 15px;">
                         <div style="display: flex; align-items: center;">
-                            <span style="font-size: 24px; margin-right: 10px;">✅</span>
+                            <span style="font-size: 24px; margin-right: 10px;">+</span>
                             <div>
                                 <p style="margin: 0; color: #27ae60; font-size: 14px; font-weight: bold;">Content Reliable</p>
                                 <p style="margin: 3px 0 0 0; color: #1e8449; font-size: 12px;">No fake news detected</p>
@@ -299,8 +271,8 @@ def inject_async_summary_script(html_content, page_url):
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
                         <div style="flex: 1; min-width: 300px; margin-right: 20px;">
                             <h2 style="margin: 0 0 15px 0; padding: 0; font-size: 24px; font-weight: 700; color: ${{bgColor}}; display: flex; align-items: center;">
-                                <span style="margin-right: 10px; font-size: 28px;">🤖</span>
-                                <span>AI Content Analysis</span>
+                                <span style="margin-right: 10px; font-size: 28px;">[AI]</span>
+                                <span>Content Analysis</span>
                             </h2>
                             <div id="cs112-summary-content" style="background: #f8f9fa; border-left: 4px solid ${{bgColor}}; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
                                 <p style="margin: 0; padding: 0; font-size: 16px; line-height: 1.8; color: #333;">
@@ -309,7 +281,7 @@ def inject_async_summary_script(html_content, page_url):
                             </div>
                             ${{fakeNewsHtml}}
                             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: 13px; color: #666; margin-top: 15px;">
-                                <span>💡 <strong>Powered by LLM Proxy</strong> | CS112 SafeGate</span>
+                                <span><strong>Powered by LLM Proxy</strong> | CS112 SafeGate</span>
                                 <button onclick="document.getElementById('cs112-ai-summary-banner').remove()" style="background: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600;">Close</button>
                             </div>
                         </div>
@@ -355,15 +327,14 @@ def inject_async_summary_script(html_content, page_url):
         .then(data => {{
             if (data.summary) {{
                 updateBanner(data.summary, data.is_fake_news, data.confidence);
-                console.log('[AI Summary] ✅ Analysis complete');
-                console.log('[AI Summary] Fake News:', data.is_fake_news, 'Confidence:', data.confidence);
+                console.log('[AI Summary] Analysis complete');
             }} else {{
-                updateBanner('❌ Analysis failed', null, null);
+                updateBanner('Analysis failed', null, null);
             }}
         }})
         .catch(error => {{
             console.error('[AI Summary] Request failed:', error);
-            updateBanner('⚠️ Cannot connect to AI server', null, null);
+            updateBanner('Cannot connect to AI server', null, null);
         }});
     }}
 }})();
@@ -393,77 +364,70 @@ def inject_async_summary_script(html_content, page_url):
 
 
 def run_test_mode():
-    """Run test mode, read content from file and call LLM"""
+    """Test mode: read content from file and analyze with LLM."""
     test_file_path = "fake_news_test.txt"
     
-    print(f"{'='*60}")
-    print("🧪 LLM Test Mode")
-    print(f"{'='*60}")
-    print("✅ LLM Proxy client initialized")
-    print(f"🤖 Model: 4o-mini")
-    print(f"{'='*60}\n")
+    print("=" * 60)
+    print("LLM Test Mode")
+    print("=" * 60)
+    print("LLM Proxy client initialized")
+    print("Model: 4o-mini")
+    print("=" * 60 + "\n")
 
     try:
         with open(test_file_path, 'r', encoding='utf-8') as f:
             content_to_analyze = f.read()
         
-        print(f"📂 Reading test file: {os.path.abspath(test_file_path)}")
-        print(f"✅ Successfully read {len(content_to_analyze)} chars\n")
+        print(f"Reading test file: {os.path.abspath(test_file_path)}")
+        print(f"Successfully read {len(content_to_analyze)} chars\n")
         
-        print("📄 File content:")
-        print(f"{'-'*60}")
+        print("File content:")
+        print("-" * 60)
         print(content_to_analyze[:500])
         if len(content_to_analyze) > 500:
             print("...")
-        print(f"{'-'*60}\n")
+        print("-" * 60 + "\n")
 
-        print("⏳ Calling LLM Proxy for content analysis...\n")
+        print("Calling LLM Proxy for content analysis...\n")
         
-        # Call analysis function
         summary, is_fake, confidence = analyze_content(content_to_analyze)
         
-        print("✅ LLM analysis successful\n")
-        print("📝 Analysis Results:")
-        print(f"{'='*60}")
-        print(f"📄 Summary: {summary}")
-        print(f"🔍 Fake News: {'Yes' if is_fake else 'No'}")
-        print(f"📊 Confidence: {confidence}")
-        print(f"{'='*60}\n")
+        print("LLM analysis successful\n")
+        print("Analysis Results:")
+        print("=" * 60)
+        print(f"Summary: {summary}")
+        print(f"Fake News: {'Yes' if is_fake else 'No'}")
+        print(f"Confidence: {confidence}")
+        print("=" * 60 + "\n")
         
     except FileNotFoundError:
-        print(f"❌ Error: Test file '{test_file_path}' not found. Please create the file with test content.")
+        print(f"Error: Test file '{test_file_path}' not found. Please create the file with test content.")
     except Exception as e:
-        sys.stderr.write(f"❌ LLM test mode error: {str(e)}\n")
+        sys.stderr.write(f"LLM test mode error: {str(e)}\n")
     finally:
-        print("✅ Test complete")
+        print("Test complete")
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1].lower() == 'test':
         run_test_mode()
     else:
-        print("")
-        print("🚀" + "=" * 58 + "🚀")
-        print("   CS112 Fake News Detection Service")
-        print("🚀" + "=" * 58 + "🚀")
-        print("")
-        print(f"🌐 Server Address: http://{FLASK_HOST}:{FLASK_PORT}")
-        print(f"🤖 LLM Model: 4o-mini")
-        print("")
-        print("📋 Active Features:")
-        print("   ✅ AI Summary (Async loading)")
-        print("   ✅ Fake News Detection")
-        print("")
-        print("💡 When a page is accessed:")
-        print("   1️⃣  Proxy sends HTML to Flask")
-        print("   2️⃣  Flask injects JavaScript")
-        print("   3️⃣  Page displays immediately")
-        print("   4️⃣  JavaScript requests AI analysis")
-        print("   5️⃣  Banner appears with results")
-        print("")
+        print("\n" + "=" * 60)
+        print("CS112 Fake News Detection Project is Ready!")
         print("=" * 60)
-        print("🎯 Ready! Waiting for requests...")
-        print("=" * 60)
-        print("")
+        print(f"\nServer Address: http://{FLASK_HOST}:{FLASK_PORT}")
+        print(f"LLM Model: 4o-mini")
+        print("\nActive Features:")
+        print("  - AI Summary (Async loading)")
+        print("  - Fake News Detection")
+        print("\nWorkflow:")
+        print("  1. Proxy sends HTML to Flask")
+        print("  2. Flask injects JavaScript")
+        print("  3. Page displays immediately")
+        print("  4. JavaScript requests AI analysis")
+        print("  5. Banner appears with results")
+        print("\n" + "=" * 60)
+        print("Ready! Waiting for requests...")
+        print("=" * 60 + "\n")
         
         app.run(host=FLASK_HOST, port=FLASK_PORT, debug=True, threaded=True)
